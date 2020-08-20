@@ -70,6 +70,8 @@ app.post('/blogs/new', (req, res) => {
     //res.send('post blogs/new')
 });
 
+
+//video 317
 app.get('/blogs/:id', (req, res)=>{
     console.log("show route hit")
     console.log(req.params.id)
