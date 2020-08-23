@@ -1,7 +1,8 @@
 var express = require('express'),
     app     = express(),
     bodyParser = require('body-parser'),
-    mong       = require('mongoose');
+    mong       = require('mongoose'),
+    methodOverride = require('method-override');
 
 mong.connect('mongodb://localhost:27017/blog-app-colt', {
     useNewUrlParser: true,
@@ -12,6 +13,7 @@ mong.connect('mongodb://localhost:27017/blog-app-colt', {
 app.set('view engine', 'ejs');
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(methodOverride("_method"));
 
 var blogSchema = new mong.Schema({
     title: String,
@@ -76,9 +78,6 @@ app.get('/blogs/:id', (req, res)=>{
     console.log("show route hit")
     console.log(req.params.id)
     Blog.findById(req.params.id).then((blog)=>{
-        console.log("*****************")
-        console.log(blog)
-        console.log("*****************")
         res.render('show', {blog: blog});
     }).catch((err) => {
         console.log("There was an error", err);
@@ -86,6 +85,27 @@ app.get('/blogs/:id', (req, res)=>{
     })
 
 })
+
+// Edit Blog Page Route
+app.get('/blogs/:id/edit', (req, res) => {
+    Blog.findById(req.params.id).then((blog) => {
+        res.render('edit', {blog}); 
+    }).catch((err) => console.log("there was an error: ", err));
+    
+})
+
+// Update Blog Route 
+app.put('/blogs/:id', (req, res) => {
+    console.log("*****************")
+    console.log("hit the update put route")
+    console.log("*****************")
+    Blog.findByIdAndUpdate(req.params.id, req.body.blog).then(()=>{
+        Blog.findById(req.params.id).then((blog) => {
+            res.render('show', {blog});
+        }).catch((err) => console.log('this was an error fetchign to show: ', err));
+    }).catch((err) => console.log('there was an error updating', err ));
+
+});
 
 /* app.listen(process.env.PORT, process.env.IP, function(){
     console.log("Server IS RUNNING");

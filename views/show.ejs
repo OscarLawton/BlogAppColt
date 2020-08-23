@@ -10,6 +10,7 @@
             <span><%= blog.created.toDateString() %></span>
         </div>
         <p><%- blog.body %></p>
+        <a class="ui blue basic button" href="/blogs/<%= blog._id %>/edit">Edit</a>
     </div>
 </div>
 
