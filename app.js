@@ -2,7 +2,8 @@ var express = require('express'),
     app     = express(),
     bodyParser = require('body-parser'),
     mong       = require('mongoose'),
-    methodOverride = require('method-override');
+    methodOverride = require('method-override'),
+    expressSanitizer = require("express-sanitizer");
 
 mong.connect('mongodb://localhost:27017/blog-app-colt', {
     useNewUrlParser: true,
@@ -10,9 +11,13 @@ mong.connect('mongodb://localhost:27017/blog-app-colt', {
   }).then(() => console.log('Connected to DB!'))
     .catch(error => console.log(error.message));
 
+mong.set('useFindAndModify', false);
+
 app.set('view engine', 'ejs');
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended: true}));
+// Express Sanitizer must go after Body Parser
+app.use(expressSanitizer());
 app.use(methodOverride("_method"));
 
 var blogSchema = new mong.Schema({
@@ -58,10 +63,10 @@ app.get('/blogs/new', (req, res) => {
 }); */
 
 app.post('/blogs/new', (req, res) => {
-    /* var title = req.body.title;
-    var image = req.body.image;
-    var body = req.body.body;
-    var created = req.body.created; */
+    console.log(req.body);
+    req.body.blog.body = req.sanitize(req.body.blog.body);
+    console.log(req.body);
+    
     Blog.create(req.body.blog).then((doggo) => {
         console.log("It worked!", doggo);
         res.redirect('/blogs');
@@ -73,7 +78,7 @@ app.post('/blogs/new', (req, res) => {
 });
 
 
-//video 317
+// Show Route
 app.get('/blogs/:id', (req, res)=>{
     console.log("show route hit")
     console.log(req.params.id)
@@ -82,9 +87,9 @@ app.get('/blogs/:id', (req, res)=>{
     }).catch((err) => {
         console.log("There was an error", err);
         res.redirect('/blogs');
-    })
+    });
 
-})
+});
 
 // Edit Blog Page Route
 app.get('/blogs/:id/edit', (req, res) => {
@@ -96,15 +101,29 @@ app.get('/blogs/:id/edit', (req, res) => {
 
 // Update Blog Route 
 app.put('/blogs/:id', (req, res) => {
+    console.log(req.body.blog.body)
     console.log("*****************")
-    console.log("hit the update put route")
+    req.body.blog.body = req.sanitize(req.body.blog.body);
+    console.log(req.body.blog.body)
     console.log("*****************")
-    Blog.findByIdAndUpdate(req.params.id, req.body.blog).then(()=>{
+
+    Blog.findOneAndUpdate({_id: req.params.id}, req.body.blog).then(()=>{
         Blog.findById(req.params.id).then((blog) => {
             res.render('show', {blog});
         }).catch((err) => console.log('this was an error fetchign to show: ', err));
     }).catch((err) => console.log('there was an error updating', err ));
 
+});
+
+// Delete Route
+app.delete("/blogs/:id", (req, res) => {
+    
+    console.log("hit delete route *************")
+    Blog.findByIdAndDelete(req.params.id).then(()=>{
+        res.redirect("/blogs")
+    }).catch((err) => {
+        console.log("There was an error", err);
+    });
 });
 
 /* app.listen(process.env.PORT, process.env.IP, function(){
